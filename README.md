@@ -16,9 +16,11 @@ Supported GNOME Shell versions: 45, 46, 47, 48, 49.
 
 ## Installation
 
-## Quick Install (from cloned repo)
+### Quick Install (from cloned repo)
 
 ```bash
+git clone https://github.com/mmclinton/gnome-center-window.git
+cd gnome-center-window
 mkdir -p ~/.local/share/gnome-shell/extensions/center-window@mmc && \
 cp -r . ~/.local/share/gnome-shell/extensions/center-window@mmc/ && \
 glib-compile-schemas ~/.local/share/gnome-shell/extensions/center-window@mmc/schemas/
