@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.centerwindow"
+          path="/org/gnome/shell/extensions/centerwindow/">
+    <key name="center-hotkey" type="as">
+      <default><![CDATA[['<Alt><Shift>C']]]></default>
+      <summary>Hotkey to center the active window</summary>
+      <description>
+        The keybinding that will trigger the extension to move the currently
+        focused window to the center of its monitor. Default is Alt+Shift+C.
+      </description>
+    </key>
+  </schema>
+</schemalist>
