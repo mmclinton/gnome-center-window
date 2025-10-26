@@ -18,7 +18,7 @@ SERVICE="${SESSION}@:99"
 DISPLAY=":99"
 
 # Start Podman container
-POD=$(podman run --rm -td ${IMAGE})
+POD=$(podman run --rm --cap-add=SYS_NICE --cap-add=IPC_LOCK -td ${IMAGE})
 trap "podman stop ${POD}" EXIT
 
 # Helper function to run commands in the container
@@ -41,7 +41,10 @@ do_in_pod wait-user-bus.sh
 # Start GNOME session
 do_in_pod systemctl --user start "${SERVICE}"
 
-sleep 5
+sleep 10
+
+# Disable welcome tour (required for GNOME 40+ stability)
+do_in_pod gsettings set org.gnome.shell welcome-dialog-last-shown-version '9999999999'
 
 # Enable extension
 do_in_pod gnome-extensions enable ${UUID}
@@ -50,7 +53,7 @@ do_in_pod gnome-extensions enable ${UUID}
 do_in_pod systemctl --user stop "${SERVICE}"
 do_in_pod systemctl --user start "${SERVICE}"
 
-sleep 5
+sleep 10
 
 # Check session status
 do_in_pod systemctl --user status "${SERVICE}" | grep -q "Active: active" || { echo "Session failed to start"; exit 1; }
