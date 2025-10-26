@@ -1,5 +1,3 @@
-// extension.js — ESM format for GNOME 45+
-
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import Meta from 'gi://Meta';
@@ -41,23 +39,34 @@ export default class CenterWindowExtension extends Extension {
     try {
       Main.wm.removeKeybinding(KEY_NAME);
     } catch (e) {
+      log(`${this.metadata.uuid}: removeKeybinding failed: ${e}`);
     }
     this._settings = null;
   }
 
   _onHotkey() {
-    let win = global.display.focus_window || (global.display.get_focus_window && global.display.get_focus_window());
-    if (!win)
-      return;
+    const win = global.display.get_focus_window();
+    if (!win) return;
 
-    let monitorIndex = win.get_monitor();
-    let mon = Main.layoutManager.monitors[monitorIndex];
-    if (!mon)
-      return;
+    const monitorIndex = win.get_monitor();
+    const mon = Main.layoutManager.monitors[monitorIndex];
+    if (!mon) return;
 
-    let rect = win.get_frame_rect();
-    let targetX = mon.x + Math.floor((mon.width - rect.width) / 2);
-    let targetY = mon.y + Math.floor((mon.height - rect.height) / 2);
+    const rect = win.get_frame_rect();
+
+    const centerHorizontal = this._settings.get_boolean('center-horizontal');
+    const centerVertical = this._settings.get_boolean('center-vertical');
+
+    let targetX = rect.x;
+    let targetY = rect.y;
+
+    if (centerHorizontal) {
+      targetX = mon.x + Math.floor((mon.width - rect.width) / 2);
+    }
+
+    if (centerVertical) {
+      targetY = mon.y + Math.floor((mon.height - rect.height) / 2);
+    }
 
     try {
       win.move_frame(false, targetX, targetY);

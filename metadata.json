@@ -1,8 +1,15 @@
 {
   "uuid": "center-window@mmc",
   "name": "Center Window Shortcut",
-  "description": "Press ALT+SHIFT+C to center the active window",
-  "shell-version": ["45", "46", "47", "48", "49"],
+  "description": "Press a configurable shortcut (default: Alt+Shift+C) to center the active window horizontally and/or vertically without resizing.",
+  "shell-version": [
+    "45",
+    "46",
+    "47",
+    "48",
+    "49"
+  ],
   "settings-schema": "org.gnome.shell.extensions.centerwindow",
+  "url": "https://github.com/mmclinton/gnome-center-window",
   "type": "module"
 }

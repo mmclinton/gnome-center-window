@@ -10,5 +10,15 @@
         focused window to the center of its monitor. Default is Alt+Shift+C.
       </description>
     </key>
+    <key name="center-horizontal" type="b">
+      <default>true</default>
+      <summary>Enable horizontal centering</summary>
+      <description>Whether to center the window horizontally.</description>
+    </key>
+    <key name="center-vertical" type="b">
+      <default>true</default>
+      <summary>Enable vertical centering</summary>
+      <description>Whether to center the window vertically.</description>
+    </key>
   </schema>
 </schemalist>
