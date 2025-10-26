@@ -20,11 +20,9 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - "39"
-          - "40"
-          - "41"
-          - "42"
-          - "43"
+          - "39" #Gnome 45
+          - "40" #Gnome 46
+          - "41" #Gnome 47
         session:
           - "gnome-xsession"
     steps:

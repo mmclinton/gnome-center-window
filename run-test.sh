@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -euo pipefail
+set -x
 
 # Parse arguments
 while getopts "v:s:" OPT; do
@@ -17,7 +18,7 @@ SERVICE="${SESSION}@:99"
 DISPLAY=":99"
 
 # Start Podman container
-POD=$(podman run --rm --cap-add=SYS_NICE --cap-add=IPC_LOCK -td ${IMAGE})
+POD=$(podman run --rm -td ${IMAGE})
 trap "podman stop ${POD}" EXIT
 
 # Helper function to run commands in the container
