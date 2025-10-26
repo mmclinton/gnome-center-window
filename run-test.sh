@@ -18,7 +18,7 @@ SERVICE="${SESSION}@:99"
 DISPLAY=":99"
 
 # Start Podman container
-POD=$(podman run --rm --cap-add=SYS_NICE --cap-add=IPC_LOCK --cap-add=CAP_SYS_ADMIN -td ${IMAGE})
+POD=$(podman run --rm --cap-add=SYS_NICE --cap-add=IPC_LOCK -td ${IMAGE})
 trap "podman stop ${POD}" EXIT
 
 # Helper function to run commands in the container
@@ -27,7 +27,7 @@ do_in_pod() {
 }
 
 # Copy ZIP to container
-podman cp ${ZIP} ${POD}:/tmp/${ZIP}
+podman cp "${ZIP}" "${POD}:/tmp/${ZIP}"
 
 # Install extension
 do_in_pod gnome-extensions install /tmp/${ZIP} --force
