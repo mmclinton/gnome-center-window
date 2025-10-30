@@ -21,6 +21,7 @@ jobs:
             fedora-tag: 42
           - gnome-version: 49
             fedora-tag: 43
+      fail-fast: false # Added to run all jobs independently
     steps:
       - uses: actions/checkout@v4
       - name: Build Extension ZIP
@@ -31,30 +32,25 @@ jobs:
         run: docker build --build-arg FEDORA_TAG=${{ matrix.fedora-tag }} -t gnome-test:${{ matrix.gnome-version }} -f Dockerfile .
       - name: Run Test in Container
         run: |
-          docker run --rm -v $(pwd):/app --user root -e GNOME_VERSION=${{ matrix.gnome-version }} gnome-test:${{ matrix.gnome-version }} bash -c "
-            gnome-extensions install /app/extension.zip --force
-            gnome-extensions enable center-window@mmc
-            weston --backend=headless-backend.so --socket=wayland-1 --width=1024 --height=768 > /tmp/weston.log 2>&1 &
-            WESTON_PID=\$!
-            sleep 10  # Wait for Weston to start
-            export WAYLAND_DISPLAY=wayland-1
+          docker run --rm -v $(pwd):/app --user root gnome-test:${{ matrix.gnome-version }} bash -c "
+            Xvfb :99 -screen 0 1024x768x24 > /tmp/xvfb.log 2>&1 &
+            XVFB_PID=\$!
+            sleep 10  # Wait for Xvfb to start
+            export DISPLAY=:99
             export G_MESSAGES_DEBUG=all
             export MUTTER_DEBUG=all
-            if [ \"\$GNOME_VERSION\" -ge 49 ]; then
-              OPT='--devkit'
-            else
-              OPT='--nested'
-            fi
-            dbus-run-session -- gnome-shell \$OPT --wayland > /tmp/shell.log 2>&1 &
+            gnome-extensions install /app/extension.zip --force
+            gnome-extensions enable center-window@mmc
+            dbus-run-session -- gnome-shell --nested --x11 > /tmp/shell.log 2>&1 &
             SHELL_PID=\$!
             sleep 30
             kill \$SHELL_PID || true
             wait \$SHELL_PID || true
-            kill \$WESTON_PID || true
-            wait \$WESTON_PID || true
+            kill \$XVFB_PID || true
+            wait \$XVFB_PID || true
             cat /tmp/shell.log
             # Check for failures
-            if [ ! -f /tmp/shell.log ] || grep -iqE 'error.*center-window@mmc|failed.*center-window@mmc|crash|extension.*failed|failed to|unable to|unknown option|cannot autolaunch' /tmp/shell.log; then
+            if [ ! -f /tmp/shell.log ] || grep -iqE 'error.*center-window@mmc|failed.*center-window@mmc|crash|extension.*failed|failed to|unable to|unknown option|cannot autolaunch|display.*not.*set' /tmp/shell.log; then
               echo 'Extension load failed - see logs'
               cp /tmp/shell.log /app/shell.log
               exit 1
