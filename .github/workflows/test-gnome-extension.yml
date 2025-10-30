@@ -2,12 +2,12 @@ name: Test GNOME Extension Compatibility
 
 on:
   push:
-    branches: [main]
   pull_request:
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || contains(github.event.head_commit.message, '[run-ci]') # New: Conditional to run only on PRs or pushes with keyword
     strategy:
       matrix:
         gnome-version: [45, 46, 47, 48, 49]
