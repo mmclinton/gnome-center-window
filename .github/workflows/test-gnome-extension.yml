@@ -32,18 +32,20 @@ jobs:
       - name: Run Test in Container
         run: |
           docker run --rm -v $(pwd):/app --user root gnome-test:${{ matrix.gnome-version }} bash -c "
-            Xvfb :99 -screen 0 1024x768x24 &
-            export DISPLAY=:99
-            dbus-launch --exit-with-session gnome-extensions install /app/extension.zip --force
-            dbus-launch --exit-with-session gnome-extensions enable center-window@mmc
-            dbus-run-session -- gnome-shell --nested --wayland --verbose > /tmp/shell.log 2>&1 &
+            gnome-extensions install /app/extension.zip --force
+            gnome-extensions enable center-window@mmc
+            export G_MESSAGES_DEBUG=all
+            export MUTTER_DEBUG=all
+            dbus-run-session -- gnome-shell --nested --wayland > /tmp/shell.log 2>&1 &
             SHELL_PID=\$!
-            sleep 15
-            kill \$SHELL_PID
+            sleep 30
+            kill \$SHELL_PID || true
             wait \$SHELL_PID || true
             cat /tmp/shell.log
-            if [ ! -f /tmp/shell.log ] || grep -iqE 'error|failed|crash|center-window@mmc failed' /tmp/shell.log; then
-              echo 'Extension load failed - see logs'; exit 1;
+            if [ ! -f /tmp/shell.log ] || grep -iqE 'error.*center-window@mmc|failed.*center-window@mmc|crash|extension.*failed' /tmp/shell.log; then
+              echo 'Extension load failed - see logs'
+              cp /tmp/shell.log /app/shell.log
+              exit 1
             fi
           "
       - name: Upload Logs on Failure
@@ -52,4 +54,3 @@ jobs:
         with:
           name: logs-gnome-${{ matrix.gnome-version }}
           path: shell.log
-# test

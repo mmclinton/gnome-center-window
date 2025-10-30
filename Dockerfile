@@ -14,7 +14,8 @@ RUN dnf update -y && \
     libwayland-client \
     wayland-utils \
     xorg-x11-server-Xvfb \
-    weston && \
+    weston \
+    glibc-langpack-en && \  
     dnf clean all
 
 ENV LANG=en_US.UTF-8
