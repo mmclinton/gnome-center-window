@@ -10,8 +10,17 @@ jobs:
     if: github.event_name == 'pull_request' || contains(github.event.head_commit.message, '[run-ci]')
     strategy:
       matrix:
-        gnome-version: [45, 46, 47, 48, 49]
-        fedora-tag: [39, 40, 41, 42, 43] # Paired: One Fedora per GNOME (e.g., 45 on 39)
+        include:
+          - gnome-version: 45
+            fedora-tag: 39
+          - gnome-version: 46
+            fedora-tag: 40
+          - gnome-version: 47
+            fedora-tag: 41
+          - gnome-version: 48
+            fedora-tag: 42
+          - gnome-version: 49
+            fedora-tag: 43
     steps:
       - uses: actions/checkout@v4
       - name: Build Extension ZIP
@@ -22,15 +31,17 @@ jobs:
         run: docker build --build-arg FEDORA_TAG=${{ matrix.fedora-tag }} -t gnome-test:${{ matrix.gnome-version }} -f Dockerfile .
       - name: Run Test in Container
         run: |
-          docker run --rm -v $(pwd):/app gnome-test:${{ matrix.gnome-version }} bash -c "
+          docker run --rm -v $(pwd):/app --user root gnome-test:${{ matrix.gnome-version }} bash -c "
             # Install the extension ZIP (unzips to ~/.local/share/gnome-shell/extensions/center-window@mmc/)
             gnome-extensions install /app/extension.zip --force
             
             # Enable the extension
+            Xvfb :99 -screen 0 1024x768x24 &
+            export DISPLAY=:99
             gnome-extensions enable center-window@mmc
             
             # Start nested Wayland GNOME Shell session in background with verbose logging
-            dbus-run-session -- gnome-shell --nested --wayland --verbose > /app/shell.log 2>&1 &
+            dbus-run-session -- gnome-shell --nested --wayland --verbose > /tmp/shell.log 2>&1 &
             SHELL_PID=\$!
             
             # Wait for initialization (adjust sleep if needed for slower loads)
@@ -41,8 +52,8 @@ jobs:
             wait \$SHELL_PID || true  # Ignore exit if already stopped
             
             # Check logs for extension-related errors (customized for your extension's log prefix and general failures)
-            cat /app/shell.log
-            if grep -iqE 'error|failed|crash|center-window@mmc' /app/shell.log; then
+            cat /tmp/shell.log
+            if [ ! -f /tmp/shell.log ] || grep -iqE 'error|failed|crash|center-window@mmc failed' /tmp/shell.log; then
               echo 'Extension load failed - see logs'; exit 1;
             fi
           "

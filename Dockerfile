@@ -12,13 +12,10 @@ RUN dnf update -y && \
     mesa-dri-drivers \
     libwayland-server \
     libwayland-client \
-    wayland-utils && \
+    wayland-utils \
+    xorg-x11-server-Xvfb \
+    weston && \
     dnf clean all
-
-RUN useradd -m tester
-
-USER tester
-WORKDIR /home/tester
 
 ENV LANG=en_US.UTF-8
 ENV MESA_LOADER_DRIVER_OVERRIDE=llvmpipe
