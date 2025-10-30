@@ -1,0 +1,24 @@
+ARG FEDORA_TAG
+FROM fedora:${FEDORA_TAG}
+
+RUN dnf update -y && \
+    dnf install -y \
+    gnome-shell \
+    mutter \
+    gjs \
+    dbus-daemon \
+    gettext \
+    glib2 \
+    mesa-dri-drivers-llvmpipe \
+    libwayland-server \
+    libwayland-client \
+    wayland-utils && \
+    dnf clean all
+
+RUN useradd -m tester
+
+USER tester
+WORKDIR /home/tester
+
+ENV LANG=en_US.UTF-8
+ENV MESA_LOADER_DRIVER_OVERRIDE=llvmpipe

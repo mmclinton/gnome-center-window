@@ -1,0 +1,54 @@
+name: Test GNOME Extension Compatibility
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        gnome-version: [45, 46, 47, 48, 49]
+        fedora-tag: [39, 40, 41, 42, 43] # Corresponds to GNOME versions (e.g., Fedora 43 with GNOME 49)
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Extension ZIP
+        run: |
+          glib-compile-schemas schemas/  # Compiles org.gnome.shell.extensions.centerwindow.gschema.xml to gschemas.compiled
+          zip -r extension.zip metadata.json extension.js prefs.js schemas/
+      - name: Build Custom Docker Image
+        run: docker build --build-arg FEDORA_TAG=${{ matrix.fedora-tag }} -t gnome-test:${{ matrix.gnome-version }} -f Dockerfile .
+      - name: Run Test in Container
+        run: |
+          docker run --rm -v $(pwd):/app gnome-test:${{ matrix.gnome-version }} bash -c "
+            # Install the extension ZIP (unzips to ~/.local/share/gnome-shell/extensions/center-window@mmc/)
+            gnome-extensions install /app/extension.zip --force
+            
+            # Enable the extension
+            gnome-extensions enable center-window@mmc
+            
+            # Start nested Wayland GNOME Shell session in background with verbose logging
+            dbus-run-session -- gnome-shell --nested --wayland --verbose > /app/shell.log 2>&1 &
+            SHELL_PID=\$!
+            
+            # Wait for initialization (adjust sleep if needed for slower loads)
+            sleep 15
+            
+            # Stop the session gracefully
+            kill \$SHELL_PID
+            wait \$SHELL_PID || true  # Ignore exit if already stopped
+            
+            # Check logs for extension-related errors (customized for your extension's log prefix and general failures)
+            cat /app/shell.log
+            if grep -iqE 'error|failed|crash|center-window@mmc' /app/shell.log; then
+              echo 'Extension load failed - see logs'; exit 1;
+            fi
+          "
+      - name: Upload Logs on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-gnome-${{ matrix.gnome-version }}
+          path: shell.log
