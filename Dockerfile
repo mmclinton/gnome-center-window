@@ -9,7 +9,7 @@ RUN dnf update -y && \
     dbus-daemon \
     gettext \
     glib2 \
-    mesa-dri-drivers-llvmpipe \
+    mesa-dri-drivers \
     libwayland-server \
     libwayland-client \
     wayland-utils && \

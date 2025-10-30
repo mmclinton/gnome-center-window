@@ -7,11 +7,11 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' || contains(github.event.head_commit.message, '[run-ci]') # New: Conditional to run only on PRs or pushes with keyword
+    if: github.event_name == 'pull_request' || contains(github.event.head_commit.message, '[run-ci]')
     strategy:
       matrix:
         gnome-version: [45, 46, 47, 48, 49]
-        fedora-tag: [39, 40, 41, 42, 43] # Corresponds to GNOME versions (e.g., Fedora 43 with GNOME 49)
+        fedora-tag: [39, 40, 41, 42, 43] # Paired: One Fedora per GNOME (e.g., 45 on 39)
     steps:
       - uses: actions/checkout@v4
       - name: Build Extension ZIP
