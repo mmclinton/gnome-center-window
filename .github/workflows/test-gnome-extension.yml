@@ -31,19 +31,37 @@ jobs:
         run: docker build --build-arg FEDORA_TAG=${{ matrix.fedora-tag }} -t gnome-test:${{ matrix.gnome-version }} -f Dockerfile .
       - name: Run Test in Container
         run: |
-          docker run --rm -v $(pwd):/app --user root gnome-test:${{ matrix.gnome-version }} bash -c "
+          docker run --rm -v $(pwd):/app --user root -e GNOME_VERSION=${{ matrix.gnome-version }} gnome-test:${{ matrix.gnome-version }} bash -c "
             gnome-extensions install /app/extension.zip --force
             gnome-extensions enable center-window@mmc
+            weston --backend=headless-backend.so --socket=wayland-1 --width=1024 --height=768 > /tmp/weston.log 2>&1 &
+            WESTON_PID=\$!
+            sleep 10  # Wait for Weston to start
+            export WAYLAND_DISPLAY=wayland-1
             export G_MESSAGES_DEBUG=all
             export MUTTER_DEBUG=all
-            dbus-run-session -- gnome-shell --nested --wayland > /tmp/shell.log 2>&1 &
+            if [ \"\$GNOME_VERSION\" -ge 49 ]; then
+              OPT='--devkit'
+            else
+              OPT='--nested'
+            fi
+            dbus-run-session -- gnome-shell \$OPT --wayland > /tmp/shell.log 2>&1 &
             SHELL_PID=\$!
             sleep 30
             kill \$SHELL_PID || true
             wait \$SHELL_PID || true
+            kill \$WESTON_PID || true
+            wait \$WESTON_PID || true
             cat /tmp/shell.log
-            if [ ! -f /tmp/shell.log ] || grep -iqE 'error.*center-window@mmc|failed.*center-window@mmc|crash|extension.*failed' /tmp/shell.log; then
+            # Check for failures
+            if [ ! -f /tmp/shell.log ] || grep -iqE 'error.*center-window@mmc|failed.*center-window@mmc|crash|extension.*failed|failed to|unable to|unknown option|cannot autolaunch' /tmp/shell.log; then
               echo 'Extension load failed - see logs'
+              cp /tmp/shell.log /app/shell.log
+              exit 1
+            fi
+            # Positive validation: Ensure extension was loaded
+            if ! grep -iq 'center-window@mmc' /tmp/shell.log; then
+              echo 'No evidence of extension loading - fail'
               cp /tmp/shell.log /app/shell.log
               exit 1
             fi
